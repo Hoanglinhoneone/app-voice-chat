@@ -60,7 +60,7 @@ import vcc.hnl.voicechat.common.model.Message
 import vcc.hnl.voicechat.common.model.Participant
 import vcc.hnl.voicechat.common.model.Role
 import vcc.hnl.voicechat.R
-@SuppressLint("ShowToast")
+@SuppressLint("ShowToast", "CoroutineCreationDuringComposition")
 @Composable
 fun ChatScreen(
     modifier: Modifier = Modifier
@@ -83,6 +83,29 @@ fun ChatScreen(
                     mainViewModel.startListening()
                 }
             })
+    Timber.i("Permission handle")
+    when {
+        ContextCompat.checkSelfPermission(
+            context, Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED -> {
+            Timber.i("Permission already granted")
+            mainViewModel.startListening()
+        }
+
+        ActivityCompat.shouldShowRequestPermissionRationale(
+            context as Activity, Manifest.permission.RECORD_AUDIO
+        ) -> {
+            Timber.i("Should show a permission rationale")
+            scope.launch {
+                snackBarHostState.showSnackbar("Vui lòng mở cài đặt và cấp quyền micro")
+            }
+        }
+
+        else -> {
+            Timber.i("Request record audio permission")
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
 
 
     Scaffold(
@@ -95,103 +118,80 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .weight(1f)
-                    .fillMaxSize()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(bottom = 8.dp)
-                        .weight(1f)
-                        .fillMaxSize()
-                        .background(
-                            MaterialTheme.colorScheme.onSurface,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .align(Alignment.CenterHorizontally)
-                ) {
-                    Column {
-                        ModelDropdownMenu(
-                            uiState.models,
-                            onClickedModel = {
-                                mainViewModel.changeModel(it)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.End)
-                        )
-                        uiState.modelInfo?.let {
-                            Text(
-                                text = it.id,
-                                color = if (isDarkMode) Color.Black else Color.White,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                        }
-                    }
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_cloud),
-                        contentDescription = null,
-                        modifier = Modifier.clickable {
-                            Timber.i("Permission handle")
-                            when {
-                                ContextCompat.checkSelfPermission(
-                                    context, Manifest.permission.RECORD_AUDIO
-                                ) == PackageManager.PERMISSION_GRANTED -> {
-                                    Timber.i("Permission already granted")
-                                    mainViewModel.startListening()
-                                }
-
-                                ActivityCompat.shouldShowRequestPermissionRationale(
-                                    context as Activity, Manifest.permission.RECORD_AUDIO
-                                ) -> {
-                                    Timber.i("Should show a permission rationale")
-                                    scope.launch {
-                                        snackBarHostState.showSnackbar("Vui lòng mở cài đặt và cấp quyền micro")
-                                    }
-                                }
-
-                                else -> {
-                                    Timber.i("Request record audio permission")
-                                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                }
-                            }
-                        }
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                        .background(
-                            MaterialTheme.colorScheme.onSurface,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .align(Alignment.CenterHorizontally)
-
-                ) {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                    ) {
-                        Image(
-                            painter = painterResource(id = if (isDarkMode) R.drawable.ic_person else R.drawable.ic_person_white),
-                            contentDescription = null,
-                            modifier = Modifier.clickable {
-                                mainViewModel.startListening()
-                            }
-                        )
-                        Text(
-                            text = "Speech to Text",
-                            color = if (isDarkMode) Color.Black else Color.White,
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .padding(top = 8.dp)
-                        )
-                    }
-                }
-            }
+//            Column(
+//                modifier = Modifier
+//                    .padding(8.dp)
+//                    .weight(1f)
+//                    .fillMaxSize()
+//            ) {
+//                Box(
+//                    modifier = Modifier
+//                        .padding(bottom = 8.dp)
+//                        .weight(1f)
+//                        .fillMaxSize()
+//                        .background(
+//                            MaterialTheme.colorScheme.onSurface,
+//                            shape = RoundedCornerShape(16.dp)
+//                        )
+//                        .align(Alignment.CenterHorizontally)
+//                ) {
+//                    Column {
+//                        ModelDropdownMenu(
+//                            uiState.models,
+//                            onClickedModel = {
+//                                mainViewModel.changeModel(it)
+//                            },
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .align(Alignment.End)
+//                        )
+//                        uiState.modelInfo?.let {
+//                            Text(
+//                                text = it.id,
+//                                color = if (isDarkMode) Color.Black else Color.White,
+//                                modifier = Modifier.align(Alignment.CenterHorizontally)
+//                            )
+//                        }
+//                    }
+////                    Image(
+////                        painter = painterResource(id = R.drawable.ic_cloud),
+////                        contentDescription = null,
+////                        modifier = Modifier.clickable {
+////                        }
+////                    )
+//                }
+//
+//                Box(
+//                    modifier = Modifier
+//                        .weight(1f)
+//                        .fillMaxSize()
+//                        .background(
+//                            MaterialTheme.colorScheme.onSurface,
+//                            shape = RoundedCornerShape(16.dp)
+//                        )
+//                        .align(Alignment.CenterHorizontally)
+//
+//                ) {
+//                    Column(
+//                        modifier = Modifier.align(Alignment.Center),
+//                    ) {
+//                        Image(
+//                            painter = painterResource(id = if (isDarkMode) R.drawable.ic_person else R.drawable.ic_person_white),
+//                            contentDescription = null,
+//                            modifier = Modifier.clickable {
+//                                mainViewModel.startListening()
+//                            }
+//                        )
+//                        Text(
+//                            text = "Speech to Text",
+//                            color = if (isDarkMode) Color.Black else Color.White,
+//                            modifier = Modifier
+//                                .align(Alignment.CenterHorizontally)
+//                                .padding(top = 8.dp)
+//                        )
+//                    }
+//                }
+//            }
 
             Box(
                 modifier = Modifier
