@@ -3,6 +3,8 @@ package vcc.hnl.voicechat.common
 import vcc.hnl.voicechat.common.model.Product
 
 object Constants {
+    const val PREFERENCE_NAME = "sharedPreferences"
+
     object Role {
         const val USER = "User"
         const val SYSTEM = "System"

@@ -10,6 +10,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +25,7 @@ import kotlin.collections.forEach
 
 @Composable
 fun ModelDropdownMenu(
+    modelSelected: ModelInfo,
     models: List<ModelInfo>,
     modifier: Modifier = Modifier,
     onClickedModel: (modelInfo: ModelInfo) -> Unit = {}
@@ -35,6 +37,10 @@ fun ModelDropdownMenu(
         modifier = modifier
             .padding(8.dp)
     ) {
+        Text(
+            text = modelSelected.id,
+            modifier = Modifier.align(Alignment.Center)
+        )
         IconButton(onClick = { expanded = !expanded },
             modifier = Modifier.align(Alignment.CenterEnd)) {
             Icon(Icons.Default.ArrowDropDown, contentDescription = "More options", modifier = Modifier.background(

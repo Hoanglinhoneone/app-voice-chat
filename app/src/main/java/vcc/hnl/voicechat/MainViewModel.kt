@@ -2,6 +2,7 @@ package vcc.hnl.voicechat
 
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,6 +18,7 @@ import vcc.hnl.voicechat.common.model.Role
 import vcc.hnl.voicechat.common.speechtext.SpeechToTextManager
 import vcc.hnl.voicechat.common.speechtext.TextToSpeechManager
 import vcc.hnl.voicechat.data.repository.chat.ChatRepository
+import vcc.hnl.voicechat.data.repository.setting.SettingRepository
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.collections.toMutableList
@@ -26,6 +28,7 @@ import kotlin.text.isNullOrEmpty
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
+    private val settingRepository: SettingRepository,
     private val chatRepository: ChatRepository,
     private val textToSpeechManager: TextToSpeechManager,
     private val speechToTextManager: SpeechToTextManager,
@@ -56,6 +59,7 @@ class MainViewModel @Inject constructor(
      * Init
      ***********************************************************************/
     init {
+        initDomain()
         initModels()
         initModelInfo()
         // TTS
@@ -83,7 +87,7 @@ class MainViewModel @Inject constructor(
                 }
             }
         }
-//        STT
+
         viewModelScope.launch {
             launch {
                 speechToTextManager.isListening.collect { isListening ->
@@ -125,6 +129,12 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    private  fun initDomain() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update { it.copy(domain = settingRepository.getDomain()) }
+        }
+    }
+
     /* **********************************************************************
      * Function
      ***********************************************************************/
@@ -159,6 +169,17 @@ class MainViewModel @Inject constructor(
         Timber.i("change model")
         _uiState.update { it.copy(modelInfo = modelInfo) }
         _messages.update { emptyList() }
+    }
+
+    fun changeDomain(domain: String) {
+        _uiState.update { it.copy(domain = domain) }
+    }
+
+    fun updateDomain() {
+        Timber.d("Update domain...")
+        viewModelScope.launch(Dispatchers.IO) {
+            settingRepository.setDomain(_uiState.value.domain)
+        }
     }
 
     private fun sendMessageToServer(message: Message) {
@@ -291,6 +312,7 @@ class MainViewModel @Inject constructor(
      * Classes
      ***********************************************************************/
     data class UiState(
+        val domain: String = "",
         val models: List<ModelInfo> = emptyList(),
         val modelInfo: ModelInfo? = ModelInfo(
             id = "gemma-3-27b-it",

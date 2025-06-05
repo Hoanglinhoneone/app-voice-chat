@@ -7,7 +7,6 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -26,20 +25,27 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,16 +61,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import vcc.hnl.voicechat.MainViewModel
-import vcc.hnl.voicechat.ui.component.ModelDropdownMenu
 import vcc.hnl.voicechat.common.model.Message
 import vcc.hnl.voicechat.common.model.Participant
 import vcc.hnl.voicechat.common.model.Role
 import vcc.hnl.voicechat.R
+
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("ShowToast", "CoroutineCreationDuringComposition")
 @Composable
 fun ChatScreen(
     modifier: Modifier = Modifier
 ) {
+    var showSettingUi by remember { mutableStateOf(false) }
     val isDarkMode = isSystemInDarkTheme()
     val snackBarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
@@ -74,44 +82,62 @@ fun ChatScreen(
     val messages by mainViewModel.messages.collectAsState()
     val uiState by mainViewModel.uiState.collectAsState()
     val scope: CoroutineScope = rememberCoroutineScope()
-    val permissionLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission(),
-            onResult = { isGranted ->
-                Timber.i("Permission granted = $isGranted")
-                if (isGranted) {
-                    mainViewModel.startListening()
-                }
-            })
-    Timber.i("Permission handle")
-    when {
-        ContextCompat.checkSelfPermission(
-            context, Manifest.permission.RECORD_AUDIO
-        ) == PackageManager.PERMISSION_GRANTED -> {
-            Timber.i("Permission already granted")
-            mainViewModel.startListening()
-        }
-
-        ActivityCompat.shouldShowRequestPermissionRationale(
-            context as Activity, Manifest.permission.RECORD_AUDIO
-        ) -> {
-            Timber.i("Should show a permission rationale")
-            scope.launch {
-                snackBarHostState.showSnackbar("Vui lòng mở cài đặt và cấp quyền micro")
-            }
-        }
-
-        else -> {
-            Timber.i("Request record audio permission")
-            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        }
-    }
+//    val permissionLauncher =
+//        rememberLauncherForActivityResult(
+//            contract = ActivityResultContracts.RequestPermission(),
+//            onResult = { isGranted ->
+//                Timber.i("Permission granted = $isGranted")
+//                if (isGranted) {
+//                    mainViewModel.startListening()
+//                }
+//            })
+//    Timber.i("Permission handle")
+//    when {
+//        ContextCompat.checkSelfPermission(
+//            context, Manifest.permission.RECORD_AUDIO
+//        ) == PackageManager.PERMISSION_GRANTED -> {
+//            Timber.i("Permission already granted")
+//            mainViewModel.startListening()
+//        }
+//
+//        ActivityCompat.shouldShowRequestPermissionRationale(
+//            context as Activity, Manifest.permission.RECORD_AUDIO
+//        ) -> {
+//            Timber.i("Should show a permission rationale")
+//            scope.launch {
+//                snackBarHostState.showSnackbar("Vui lòng mở cài đặt và cấp quyền micro")
+//            }
+//        }
+//
+//        else -> {
+//            Timber.i("Request record audio permission")
+//            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+//        }
+//    }
 
 
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = snackBarHostState)
         },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(text = "Voice Chat")
+                },
+                actions = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Settings",
+                        tint = Color.Black ,
+                        modifier = Modifier.clickable {
+                            showSettingUi = true
+                        }
+                    )
+                }
+
+            )
+        }
     ) { paddingValues ->
         Row(
             modifier = modifier
@@ -199,6 +225,22 @@ fun ChatScreen(
                     .fillMaxHeight()
                     .padding(8.dp)
             ) {
+                if(showSettingUi) {
+                    BottomSheetSetting(
+                        uiState,
+                        mainViewModel,
+                        onCloseSheet = {
+                            showSettingUi = false
+                        },
+                        onSaveClicked = {
+                            mainViewModel.updateDomain()
+                            showSettingUi = false
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.Center)
+                    )
+                }
                 ChatView(messages)
             }
         }
